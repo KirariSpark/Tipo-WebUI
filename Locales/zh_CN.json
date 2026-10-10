@@ -34,8 +34,6 @@
     "unload_model_success": "模型已卸载",
     "img_length": "图片长度",
     "img_width": "图片宽度",
-    "generate_artists": "生成画师串",
-    "tab_artist": "画师串",
     "dropdown": {
         "mode_none": "仅标签",
         "mode_tag2long": "标签到长自然语言",

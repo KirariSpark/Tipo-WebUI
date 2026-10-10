@@ -10,8 +10,6 @@
 或者有能力的可以直接去原站点：[Huggingface](https://huggingface.co/collections/KBlueLeaf/tipo-66f9108eee826b5daad0d4bf)  
 [琥珀佬的Github主页](https://github.com/KohakuBlueleaf)
 
-一部分代码由[ GLM4 ](https://chatglm.cn/main/alltoolsdetail?lang=zh)
-
 ## 依赖
 
 llama-cpp-python 最好要 GPU 版的，在 CPU 版本下`n_gpu_layers`参数不会生效

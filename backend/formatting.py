@@ -5,18 +5,6 @@ import re
 
 ##########################
 
-# 把 artist 放到末尾
-def send_artist_to_end(text):
-    pattern1 = r"\nartist:.*"
-    # 移动到末尾
-    text = re.sub(pattern1, "", text) + re.search(pattern1, text).group(0)
-    # 去除末尾的换行
-    text = text.rstrip("\n")
-    return text
-
-
-##########################
-
 # 格式化输出
 def extract_and_format(model_out, mode_tags):
     if mode_tags == "None":

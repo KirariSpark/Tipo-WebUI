@@ -1058,7 +1058,6 @@ requires-dist = [
     { name = "llama-cpp-python", specifier = ">=0.3.36" },
     { name = "pyperclip", specifier = ">=1.11.0" },
 ]
-provides-extras = ["hanatsumi"]
 
 [[package]]
 name = "tomlkit"

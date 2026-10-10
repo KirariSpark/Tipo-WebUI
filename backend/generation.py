@@ -1,8 +1,7 @@
-"""提示词与画师串的生成逻辑。"""
+"""提示词生成逻辑。"""
 
 from backend import model
 from backend.config import locale
-from backend.formatting import send_artist_to_end
 
 
 ##########################
@@ -51,26 +50,3 @@ def gen_prompt(quality_tags, mode_tags, length_tags, tags, max_token, temp, Seed
             )
 
         return output['choices'][0]['text']
-
-
-##########################
-
-# 生成画师串
-def gen_artist_str(prompt, max_token, temp, Seed, top_p, min_p, top_k):
-    prompt = send_artist_to_end(prompt)
-    output = model.llm.create_completion(
-        prompt,
-        max_tokens=max_token,
-        echo=True,
-        temperature=temp,
-        seed=Seed,
-        top_p=top_p,
-        min_p=min_p,
-        top_k=top_k,
-        stop=["target"]
-    )
-
-    # test
-    # print(output)
-
-    return output['choices'][0]['text']

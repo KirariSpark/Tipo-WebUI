@@ -12,7 +12,7 @@ import pyperclip
 
 from backend.utils import random_seed
 from backend.model import list_model_files, load_model, unload_model
-from backend.generation import gen_prompt, gen_artist_str
+from backend.generation import gen_prompt
 from backend.formatting import extract_and_format, remove_words_by_regex
 
 ##########################
@@ -125,15 +125,6 @@ with gr.Blocks(title="TIPO") as demo:
                 tags = gr.Textbox(label=locale["general_tags"])
 
             # -------------------------
-            # 画师标签页
-            with gr.Tab(locale["tab_artist"]):
-                with gr.Row(equal_height=True):
-                    Seed2 = gr.Number(label=locale["seed"], value=-1)
-                    Seed_random2 = gr.Button(locale["random_seed"])
-                # 画师标签
-                artist_tags_textbox = gr.Textbox(label=locale["artist"])
-
-            # -------------------------
             # 设置标签页
             with gr.Tab(locale["tab_settings"]):
                 # 模型设置
@@ -169,15 +160,12 @@ with gr.Blocks(title="TIPO") as demo:
             with gr.Row():
                 upsampling_btn = gr.Button("TIPO！", variant="primary", scale=2)
                 copy_btn = gr.Button(locale["copy_to_clipboard"], scale=1)
-                gen_artists = gr.Button(locale["generate_artists"], scale=1)
             with gr.Row():
                 raw_output = gr.Textbox(label=locale["result"], interactive=False)
                 formatted_output = gr.Textbox(label=locale["formatted_result"], interactive=False)
                 # 更新格式化输出
                 raw_output.change(update_format_output, inputs=[raw_output, banned_tags, mode_tags],
                                   outputs=formatted_output)
-                artist_tags_textbox.change(update_format_output, inputs=[artist_tags_textbox, banned_tags, mode_tags],
-                                           outputs=formatted_output)
 
     # -------------------------
     # 写提示词
@@ -211,11 +199,6 @@ with gr.Blocks(title="TIPO") as demo:
         inputs=None,
         outputs=Seed
     )
-    Seed_random2.click(
-        fn=random_seed,
-        inputs=None,
-        outputs=Seed2
-    )
 
     # -------------------------
     # 复制到剪贴板
@@ -223,14 +206,6 @@ with gr.Blocks(title="TIPO") as demo:
         fn=copy_to_clipboard,
         inputs=formatted_output,
         outputs=None
-    )
-
-    # -------------------------
-    # 生成画师串
-    gen_artists.click(
-        fn=gen_artist_str,
-        inputs=[raw_output, max_tokens, temprature, Seed2, top_p, min_p, top_k],
-        outputs=artist_tags_textbox
     )
 
     # -------------------------
