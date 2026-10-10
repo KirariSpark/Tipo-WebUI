@@ -2,3 +2,4 @@
 /.idea/
 *.bat
 /user_state.json
+*.pyc

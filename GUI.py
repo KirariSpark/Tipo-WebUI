@@ -44,7 +44,7 @@ def copy_to_clipboard(output):
     try:
         pyperclip.copy(output)
         gr.Info(locale["copy_success"])
-    except Exception as e:
+    except Exception:
         raise gr.Error(locale["copy_fail"])
 
 
@@ -63,7 +63,7 @@ def refresh_model_list(current_choice):
 
     if current_choice in new_list:
         new_value = current_choice
-    elif new_list != []:
+    elif new_list:
         new_value = new_list[0]
     else:
         new_value = None
@@ -155,7 +155,7 @@ with gr.Blocks(title="TIPO") as demo:
                     min_p = gr.Number(label="min_p", value=state.min_p)
                 with gr.Row():
                     max_tokens = gr.Number(label="max_tokens", value=state.max_tokens)
-                    temprature = gr.Number(label="temperature", value=state.temperature)
+                    temperature = gr.Number(label="temperature", value=state.temperature)
                 top_k = gr.Number(label="top_k", value=state.top_k)
 
                 # 格式化设置
@@ -191,7 +191,7 @@ with gr.Blocks(title="TIPO") as demo:
     # 写提示词
     upsampling_btn.click(
         fn=gen_prompt,
-        inputs=[quality_tags, mode_tags, length_tags, tags, max_tokens, temprature, Seed, top_p, min_p, top_k,
+        inputs=[quality_tags, mode_tags, length_tags, tags, max_tokens, temperature, Seed, top_p, min_p, top_k,
                 rating_tags, artist_tags, character_tags, meta_tags, img_length, img_width],
         outputs=raw_output
     )
@@ -275,7 +275,7 @@ with gr.Blocks(title="TIPO") as demo:
         (length_tags, "length_tags"),
         (rating_tags, "rating_tags"),
         (max_tokens, "max_tokens"),
-        (temprature, "temperature"),
+        (temperature, "temperature"),
         (top_p, "top_p"),
         (min_p, "min_p"),
         (top_k, "top_k"),
