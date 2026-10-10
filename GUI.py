@@ -17,28 +17,6 @@ from backend.formatting import extract_and_format, remove_words_by_regex
 
 ##########################
 
-# 主题
-theme = gr.themes.Ocean(
-    primary_hue="violet",
-    secondary_hue="indigo",
-    radius_size="sm",
-).set(
-    background_fill_primary='*neutral_50',
-    border_color_accent='*neutral_50',
-    color_accent_soft='*neutral_50',
-    shadow_drop='none',
-    shadow_drop_lg='none',
-    shadow_inset='none',
-    shadow_spread='none',
-    shadow_spread_dark='none',
-    layout_gap='*spacing_xl',
-    checkbox_background_color='*primary_50',
-    checkbox_background_color_focus='*primary_200'
-)
-
-
-##########################
-
 # 更新格式化输出
 def update_format_output(formatted_text, banned_tags, mode_tags):
     text = extract_and_format(formatted_text, mode_tags)
@@ -264,4 +242,4 @@ with gr.Blocks(title="TIPO") as demo:
     )
 
 
-demo.launch(theme=theme)
+demo.launch()
