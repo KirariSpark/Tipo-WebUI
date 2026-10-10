@@ -1,3 +1,4 @@
 /models/
 /.idea/
 *.bat
+/user_state.json

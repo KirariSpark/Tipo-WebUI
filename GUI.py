@@ -14,6 +14,10 @@ from backend.utils import random_seed
 from backend.model import list_model_files, load_model, unload_model
 from backend.generation import gen_prompt
 from backend.formatting import extract_and_format, remove_words_by_regex, AVAILABLE_FIELDS, DEFAULT_FIELDS
+from backend.persistence import AppState
+
+# 用户状态（提示词、生成选项与设置），赋值即自动保存
+state = AppState()
 
 ##########################
 
@@ -81,12 +85,12 @@ with gr.Blocks(title="TIPO") as demo:
             with gr.Tab(locale["tab_generate"]):
                 with gr.Row(equal_height=True):
                     # 种子
-                    Seed = gr.Number(label=locale["seed"], value=-1)
+                    Seed = gr.Number(label=locale["seed"], value=state.seed)
                     Seed_random = gr.Button(locale["random_seed"])
                 with gr.Row():
                     # 长宽比
-                    img_length = gr.Number(label=locale["img_length"], value=512, minimum=256, maximum=2048, step=1)
-                    img_width = gr.Number(label=locale["img_width"], value=512, minimum=256, maximum=2048, step=1)
+                    img_length = gr.Number(label=locale["img_length"], value=state.img_length, minimum=256, maximum=2048, step=1)
+                    img_width = gr.Number(label=locale["img_width"], value=state.img_width, minimum=256, maximum=2048, step=1)
                 with gr.Row():
                     # 模式和长度标签
                     mode_tags = gr.Dropdown(
@@ -99,7 +103,7 @@ with gr.Blocks(title="TIPO") as demo:
                                  (locale["dropdown"]["mode_tag2short2long"], "tag_to_short_to_long"),
                                  (locale["dropdown"]["mode_short2tag2long"], "short_to_tag_to_long"),
                                  (locale["dropdown"]["mode_short2long2tag"], "short_to_long_to_tag")],
-                        value="None"
+                        value=state.mode_tags
                     )
                     length_tags = gr.Dropdown(
                         label=locale["length"],
@@ -107,11 +111,11 @@ with gr.Blocks(title="TIPO") as demo:
                                  (locale["dropdown"]["length_short"], "short"),
                                  (locale["dropdown"]["length_long"], "long"),
                                  (locale["dropdown"]["length_verylong"], "very_long")],
-                        value="short"
+                        value=state.length_tags
                     )
                 with gr.Row():
                     # 质量和屏蔽标签
-                    quality_tags = gr.Textbox(label=locale["quality"], value="masterpiece")
+                    quality_tags = gr.Textbox(label=locale["quality"], value=state.quality_tags)
                     banned_tags = gr.Textbox(label=locale["banned_tags"])
                 with gr.Row():
                     # 分级和画师
@@ -120,12 +124,12 @@ with gr.Blocks(title="TIPO") as demo:
                                                        (locale["dropdown"]["rating_sensitive"], "sensitive"),
                                                        (locale["dropdown"]["rating_nsfw"], "nsfw"),
                                                        (locale["dropdown"]["rating_explicit"], "explicit")],
-                                              value="safe")
+                                              value=state.rating_tags)
                     artist_tags = gr.Textbox(label=locale["artist"])
                 with gr.Row():
                     # 角色和meta标签
                     character_tags = gr.Textbox(label=locale["character"])
-                    meta_tags = gr.Textbox(label=locale["meta"], value="hires")
+                    meta_tags = gr.Textbox(label=locale["meta"], value=state.meta_tags)
                 # 通用标签
                 tags = gr.Textbox(label=locale["general_tags"])
 
@@ -135,11 +139,11 @@ with gr.Blocks(title="TIPO") as demo:
                 # 模型设置
                 gr.Markdown(locale["model_settings"])
                 with gr.Row(equal_height=True):
-                    model_list = gr.Dropdown(show_label=False, choices=available_models, scale=9, value=available_models[0] if available_models != [] else None)
+                    model_list = gr.Dropdown(show_label=False, choices=available_models, scale=9, value=state.model_path if state.model_path in available_models else (available_models[0] if available_models != [] else None))
                     refresh_model_list_btn = gr.Button("🔄", scale=1, min_width=5, interactive=True)
                 with gr.Row():
-                    n_ctx = gr.Number(label="n_ctx", value=2048)
-                    n_gpu_layers = gr.Number(label="n_gpu_layers", value=-1)
+                    n_ctx = gr.Number(label="n_ctx", value=state.n_ctx)
+                    n_gpu_layers = gr.Number(label="n_gpu_layers", value=state.n_gpu_layers)
                 with gr.Row():
                     unload_btn = gr.Button(locale["model_unload"])
                     load_btn = gr.Button(locale["model_load"], variant="primary")
@@ -147,12 +151,12 @@ with gr.Blocks(title="TIPO") as demo:
                 gr.Markdown(locale["generate_settings"])
                 # 生成设置
                 with gr.Row():
-                    top_p = gr.Number(label="top_p", value=0.95)
-                    min_p = gr.Number(label="min_p", value=0.05)
+                    top_p = gr.Number(label="top_p", value=state.top_p)
+                    min_p = gr.Number(label="min_p", value=state.min_p)
                 with gr.Row():
-                    max_tokens = gr.Number(label="max_tokens", value=1024)
-                    temprature = gr.Number(label="temperature", value=0.8)
-                top_k = gr.Number(label="top_k", value=60)
+                    max_tokens = gr.Number(label="max_tokens", value=state.max_tokens)
+                    temprature = gr.Number(label="temperature", value=state.temperature)
+                top_k = gr.Number(label="top_k", value=state.top_k)
 
                 # 格式化设置
                 gr.Markdown(locale.get("format_settings", "Format Settings"))
@@ -160,7 +164,7 @@ with gr.Blocks(title="TIPO") as demo:
                     label=locale.get("format_field_order", "Field order"),
                     multiselect=True,
                     choices=[(locale.get("format_fields", {}).get(field, field), field) for field in AVAILABLE_FIELDS],
-                    value=DEFAULT_FIELDS
+                    value=state.format_field_order
                 )
                 gr.Markdown(locale.get("format_hint", ""))
                 reset_format_btn = gr.Button(locale.get("format_reset", "Reset"))
@@ -247,6 +251,40 @@ with gr.Blocks(title="TIPO") as demo:
         inputs=None,
         outputs=format_field_order
     )
+
+    # -------------------------
+    # 自动保存用户状态（提示词、生成选项与设置）
+    def _bind_persist(component, key):
+        def _save(value):
+            setattr(state, key, value)  # 触发 property setter，自动落盘
+
+        component.change(_save, inputs=component, outputs=None,
+                         queue=False, show_progress="hidden")
+
+    for _component, _key in [
+        (quality_tags, "quality_tags"),
+        (banned_tags, "banned_tags"),
+        (artist_tags, "artist_tags"),
+        (character_tags, "character_tags"),
+        (meta_tags, "meta_tags"),
+        (tags, "tags"),
+        (Seed, "seed"),
+        (img_length, "img_length"),
+        (img_width, "img_width"),
+        (mode_tags, "mode_tags"),
+        (length_tags, "length_tags"),
+        (rating_tags, "rating_tags"),
+        (max_tokens, "max_tokens"),
+        (temprature, "temperature"),
+        (top_p, "top_p"),
+        (min_p, "min_p"),
+        (top_k, "top_k"),
+        (format_field_order, "format_field_order"),
+        (model_list, "model_path"),
+        (n_ctx, "n_ctx"),
+        (n_gpu_layers, "n_gpu_layers"),
+    ]:
+        _bind_persist(_component, _key)
 
 
 demo.launch()
