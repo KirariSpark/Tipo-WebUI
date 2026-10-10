@@ -34,8 +34,10 @@ If you want to use `TEST.py`, you need to have `kgen` installed
 4. If you don't understand the parameters, you have two options: Don't touch them, or go to the "Tutorials" page for an
    explanation.
 5. See below for generation settings, with the same two choices as above.
-6. Go to the "Generate" page, select your mode, length, write your prompt, quality, then click "TIPO!".
-7. Click "Copy to Clipboard" to copy the results.
+6. Below the generation settings there is also "Format Settings", where you can choose which fields to keep
+   and in what order (leave it as default if unsure).
+7. Go to the "Generate" page, select your mode, length, write your prompt, quality, then click "TIPO!".
+8. Click "Copy to Clipboard" to copy the results.
 
 ## Localization
 

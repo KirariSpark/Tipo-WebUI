@@ -13,19 +13,24 @@ import pyperclip
 from backend.utils import random_seed
 from backend.model import list_model_files, load_model, unload_model
 from backend.generation import gen_prompt
-from backend.formatting import extract_and_format, remove_words_by_regex
+from backend.formatting import extract_and_format, remove_words_by_regex, AVAILABLE_FIELDS, DEFAULT_FIELDS
 
 ##########################
 
 # 更新格式化输出
-def update_format_output(formatted_text, banned_tags, mode_tags):
-    text = extract_and_format(formatted_text, mode_tags)
+def update_format_output(formatted_text, banned_tags, fields_to_extract):
+    text = extract_and_format(formatted_text, fields_to_extract)
     if banned_tags:
         formatted = remove_words_by_regex(text, banned_tags)
     else:
         formatted = text
     format_output = gr.Textbox(value=formatted, interactive=False)
     return format_output
+
+
+# 恢复默认格式化字段
+def reset_format_fields():
+    return gr.Dropdown(value=DEFAULT_FIELDS)
 
 
 ##########################
@@ -149,6 +154,17 @@ with gr.Blocks(title="TIPO") as demo:
                     temprature = gr.Number(label="temperature", value=0.8)
                 top_k = gr.Number(label="top_k", value=60)
 
+                # 格式化设置
+                gr.Markdown(locale.get("format_settings", "Format Settings"))
+                format_field_order = gr.Dropdown(
+                    label=locale.get("format_field_order", "Field order"),
+                    multiselect=True,
+                    choices=[(locale.get("format_fields", {}).get(field, field), field) for field in AVAILABLE_FIELDS],
+                    value=DEFAULT_FIELDS
+                )
+                gr.Markdown(locale.get("format_hint", ""))
+                reset_format_btn = gr.Button(locale.get("format_reset", "Reset"))
+
             # -------------------------
             # 教程标签页
             with gr.Tab(locale["tab_tutorial"]):
@@ -164,7 +180,7 @@ with gr.Blocks(title="TIPO") as demo:
                 raw_output = gr.Textbox(label=locale["result"], interactive=False)
                 formatted_output = gr.Textbox(label=locale["formatted_result"], interactive=False)
                 # 更新格式化输出
-                raw_output.change(update_format_output, inputs=[raw_output, banned_tags, mode_tags],
+                raw_output.change(update_format_output, inputs=[raw_output, banned_tags, format_field_order],
                                   outputs=formatted_output)
 
     # -------------------------
@@ -214,6 +230,22 @@ with gr.Blocks(title="TIPO") as demo:
         fn=refresh_model_list,
         inputs=model_list,
         outputs=model_list
+    )
+
+    # -------------------------
+    # 修改格式化字段顺序时刷新格式化结果
+    format_field_order.change(
+        fn=update_format_output,
+        inputs=[raw_output, banned_tags, format_field_order],
+        outputs=formatted_output
+    )
+
+    # -------------------------
+    # 恢复默认格式化字段
+    reset_format_btn.click(
+        fn=reset_format_fields,
+        inputs=None,
+        outputs=format_field_order
     )
 
 

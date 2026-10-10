@@ -5,27 +5,18 @@ import re
 
 ##########################
 
+# 可用于格式化的字段全集（顺序仅作为下拉框的默认展示顺序）
+AVAILABLE_FIELDS = ['quality', 'artist', 'characters', 'meta', 'rating', 'tag', 'short', 'long']
+
+# 默认保留的字段及顺序
+DEFAULT_FIELDS = list(AVAILABLE_FIELDS)
+
+
 # 格式化输出
-def extract_and_format(model_out, mode_tags):
-    if mode_tags == "None":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'tag']
-    elif mode_tags == "tag_to_long":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'tag', 'long']
-    elif mode_tags == "tag_to_short_to_long":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'tag', 'short', 'long']
-    elif mode_tags == "long_to_tag":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'long', 'tag']
-    elif mode_tags == "short_to_long":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'short', 'long']
-    elif mode_tags == "short_to_tag_to_long":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'short', 'tag', 'long']
-    elif mode_tags == "short_to_long_to_tag":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'short', 'long', 'tag']
-    elif mode_tags == "short_to_tag":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'short', 'tag']
-    else:
-        print("Error: Invalid mode_tags value")
-        return "Error: Invalid mode_tags value"
+def extract_and_format(model_out, fields_to_extract=None):
+    # 未传入字段列表时使用默认顺序；传入空列表表示不保留任何字段
+    if fields_to_extract is None:
+        fields_to_extract = DEFAULT_FIELDS
 
     def extract_fields(model_output):
         extracted_data = {}
