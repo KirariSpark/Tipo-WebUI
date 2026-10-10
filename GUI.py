@@ -1,30 +1,19 @@
-import json
-import os
-
 ##########################
 
 # 加载语言
-print("Loading configs...")
-with open(os.path.join('Locales', 'config.json'), 'r', encoding='utf-8') as f:
-    config = json.load(f)
-    lang = config['language']
-with open(os.path.join('Locales', f'{lang}.json'), 'r', encoding='utf-8') as f:
-    locale = json.load(f)
-print(locale["locale_load_success"])
+from backend.config import locale, load_tutorial
 
 ##########################
 
 # 导入库
 print(locale["import_libs"])
-from llama_cpp import Llama
 import gradio as gr
-import random
 import pyperclip
-import re
 
-##########################
-
-llm = None
+from backend.utils import random_seed
+from backend.model import list_model_files, load_model, unload_model
+from backend.generation import gen_prompt, gen_artist_str
+from backend.formatting import extract_and_format, remove_words_by_regex
 
 ##########################
 
@@ -46,201 +35,6 @@ theme = gr.themes.Ocean(
     checkbox_background_color='*primary_50',
     checkbox_background_color_focus='*primary_200'
 )
-
-
-##########################
-
-# 获取模型文件列表
-def list_model_files():
-    models_dir = 'models'
-    model_files = [f for f in os.listdir(models_dir) if f.endswith('.gguf')]
-    return [os.path.join(models_dir, f) for f in model_files]
-
-
-##########################
-
-# 随机种
-def random_seed():
-    return random.randint(1, 2 ** 31 - 1)
-
-
-##########################
-
-# 加载模型
-def load_model(model_path, gpu, n_ctx):
-    global llm
-    try:
-        if not model_path:
-            return locale["no_model"]
-        llm = None
-        llm = Llama(model_path=model_path, n_gpu_layers=gpu, n_ctx=n_ctx)
-        return locale["load_model_success"].format(model_path=model_path)
-    except Exception as e:
-        return str(e)
-
-
-##########################
-
-# 卸载模型
-def unload_model():
-    global llm
-    llm = None
-    return locale["unload_model_success"]
-
-
-##########################
-
-# 生成提示词
-def gen_prompt(quality_tags, mode_tags, length_tags, tags, max_token, temp, Seed, top_p, min_p, top_k, rating,
-               artist, characters, meta, length, width):
-    aspect_ratio = round(length / width, 1)
-
-    if llm is None:
-        return locale["model_not_loaded"]
-    else:
-        if mode_tags == "None" or mode_tags == "tag_to_long" or mode_tags == "tag_to_short_to_long":
-            output = llm.create_completion(
-                f"quality: {quality_tags}\naspect ratio: {aspect_ratio}\ntarget: <|{length_tags}|> <|{mode_tags}|>\nrating: {rating}\nartist: {artist}\ncharacters: {characters}\nmeta: {meta}\ntag: {tags}",
-                max_tokens=max_token,
-                echo=True,
-                temperature=temp,
-                seed=Seed,
-                top_p=top_p,
-                min_p=min_p,
-                top_k=top_k
-            )
-        elif mode_tags == "long_to_tag":
-            output = llm.create_completion(
-                f"quality: {quality_tags}\naspect ratio: {aspect_ratio}\ntarget: <|{length_tags}|> <|{mode_tags}|>\nrating: {rating}\nartist: {artist}\ncharacters: {characters}\nmeta: {meta}\nlong: {tags}",
-                max_tokens=max_token,
-                echo=True,
-                temperature=temp,
-                seed=Seed,
-                top_p=top_p,
-                min_p=min_p,
-                top_k=top_k
-            )
-        else:
-            output = llm.create_completion(
-                f"quality: {quality_tags}\naspect ratio: {aspect_ratio}\ntarget: <|{length_tags}|> <|{mode_tags}|>\nrating: {rating}\nartist: {artist}\ncharacters: {characters}\nmeta: {meta}\nshort: {tags}",
-                max_tokens=max_token,
-                echo=True,
-                temperature=temp,
-                seed=Seed,
-                top_p=top_p,
-                min_p=min_p,
-                top_k=top_k
-            )
-
-        return output['choices'][0]['text']
-
-
-##########################
-
-# 把 artist 放到末尾
-def send_artist_to_end(text):
-    pattern1 = r"\nartist:.*"
-    # 移动到末尾
-    text = re.sub(pattern1, "", text) + re.search(pattern1, text).group(0)
-    # 去除末尾的换行
-    text = text.rstrip("\n")
-    return text
-
-##########################
-
-def gen_artist_str(prompt, max_token, temp, Seed, top_p, min_p, top_k):
-    prompt = send_artist_to_end(prompt)
-    output = llm.create_completion(
-        prompt,
-        max_tokens=max_token,
-        echo=True,
-        temperature=temp,
-        seed=Seed,
-        top_p=top_p,
-        min_p=min_p,
-        top_k=top_k,
-        stop=["target"]
-    )
-
-    # test
-    # print(output)
-
-    return output['choices'][0]['text']
-
-##########################
-
-# 格式化输出
-def extract_and_format(model_out, mode_tags):
-    if mode_tags == "None":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'tag']
-    elif mode_tags == "tag_to_long":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'tag', 'long']
-    elif mode_tags == "tag_to_short_to_long":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'tag', 'short', 'long']
-    elif mode_tags == "long_to_tag":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'long', 'tag']
-    elif mode_tags == "short_to_long":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'short', 'long']
-    elif mode_tags == "short_to_tag_to_long":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'short', 'tag', 'long']
-    elif mode_tags == "short_to_long_to_tag":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'short', 'long', 'tag']
-    elif mode_tags == "short_to_tag":
-        fields_to_extract = ['quality', 'artist', 'characters', 'meta', 'rating', 'short', 'tag']
-    else:
-        print("Error: Invalid mode_tags value")
-        return "Error: Invalid mode_tags value"
-
-    def extract_fields(model_output):
-        extracted_data = {}
-
-        for line in model_output.split('\n'):
-            for field in fields_to_extract:
-                if line.startswith(field + ':'):
-                    extracted_data[field] = line[len(field) + 1:].strip()
-
-        return extracted_data
-
-    extracted_data = extract_fields(model_out)
-    formatted_output = ""
-
-    for field in fields_to_extract:
-        value = extracted_data.get(field, '')
-        if value:  # Only add the field if it has a value
-            formatted_output += f"{value}\n\n"
-
-    # Remove the last two newline characters to ensure no extra space at the end
-    formatted_output = formatted_output.rstrip('\n')
-
-    return formatted_output
-
-
-##########################
-
-# 排除标签
-def remove_words_by_regex(sentence, pattern):
-    # 移除末尾的逗号和空格（如果有的话）
-    patterns = pattern.rstrip(', ')
-    # 将传入的正则表达式字符串分割成列表
-    pattern_list = re.split(r',\s*', patterns)
-    # 使用正则表达式分割句子
-    words = re.split(r',\s*', sentence)
-    # 初始化一个空列表来存放过滤后的词
-    filtered_words = []
-    # 遍历原始单词列表
-    for word in words:
-        # 检查当前单词是否与任一正则表达式匹配
-        should_remove = False
-        for pattern in pattern_list:
-            if re.match(pattern, word):
-                should_remove = True
-                break
-        # 如果当前单词不匹配任何正则表达式，则添加到过滤后的列表中
-        if not should_remove:
-            filtered_words.append(word)
-    # 重新组合成字符串
-    result = ', '.join(filtered_words)
-    return result
 
 
 ##########################
@@ -291,13 +85,12 @@ def refresh_model_list(current_choice):
 ##########################
 
 # 加载教程
-with open(os.path.join('Locales', 'Tutorials', f'{lang}.md'), "r", encoding="utf-8") as tutorial:
-    tutorial_content = tutorial.read()
+tutorial_content = load_tutorial()
 
 ##########################
 
 # gradio 界面
-with gr.Blocks(theme=theme, title="TIPO") as demo:
+with gr.Blocks(title="TIPO") as demo:
     with gr.Row():
         with gr.Column():
             # -------------------------
@@ -471,4 +264,4 @@ with gr.Blocks(theme=theme, title="TIPO") as demo:
     )
 
 
-demo.launch()
+demo.launch(theme=theme)
