@@ -14,14 +14,11 @@ dependencies = [
 ]
 
 [[tool.uv.index]]
-url = "https://abetlen.github.io/llama-cpp-python/whl/vulkan"
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+default = true
 
 [project.scripts]
 tipo = "tipo:main"
 
 [[tool.uv.index]]
-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
-default = true
-
-[[tool.uv.index]]
-url = "https://abetlen.github.io/llama-cpp-python/whl/cpu"
+url = "https://abetlen.github.io/llama-cpp-python/whl/vulkan"
